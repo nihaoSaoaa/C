@@ -51,7 +51,7 @@ bool Delete(List L, Position p)
     pre = pre->Next;
   }
   if (pre == NULL || p == NULL) {
-    printf("your posiiton is error!");
+    printf("your position is error!");
     return false;
   }
   else {

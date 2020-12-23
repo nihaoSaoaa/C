@@ -6,8 +6,8 @@
 typedef int ElementType; 
 typedef struct SNode *PtrToSNode;
 typedef struct SNode {
-    ElementType Data;
-    PtrToSNode Next;
+  ElementType Data;
+  PtrToSNode Next;
 }SNode;
 
 typedef PtrToSNode Stack;

@@ -207,15 +207,19 @@ void MergeSort2( int A[], int N )
 int main()
 {
   int i, N, A[MAX];
+  printf("对N个数进行堆排序:");
   scanf("%d", &N);
+  printf("输入这些数:");
   for(i = 0; i < N; i++) {
     scanf("%d", &A[i]);
   }
-  BubbleSort(A, N);
+  HeapSort(A, N);
+  printf("排序后的数:");
   for(i = 0; i < N; i++) {
     if(i == N - 1) printf("%d\n", A[i]);
     else printf("%d ", A[i]);
   }
   
   return 0;
+
 }
