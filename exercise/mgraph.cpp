@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <iomanip>
 #include <stack>
+#include <queue>
 using namespace std;
 #define MaxVertexNum 100 // 最大顶点数
 #define INFINITY 65535 // ∞设为双字节无符号整数的最大值65535
@@ -38,8 +39,8 @@ void InitMGraph(MGraph &Graph, int VertexNum) {
 
 // 插入边
 void InsertEdge(MGraph &Graph, Edge edge) {
-    Graph.G[edge.v1][edge.v2] = edge.weight;
-    Graph.G[edge.v2][edge.v1] = edge.weight; // 若是无向图则再插入另一条边
+    Graph.G[edge.v1-1][edge.v2-1] = edge.weight;
+    Graph.G[edge.v2-1][edge.v1-1] = edge.weight; // 若是无向图则再插入另一条边
 }
 
 // 建图
@@ -74,7 +75,7 @@ void LoadGraph(MGraph &Graph) {
     for (v = 0; v < Graph.nv; v++) {
         cout << Graph.Data[v] << " ";
         for (w = 0; w < Graph.nv; w++) {
-            if(Graph.G[v][w] == INFINITY) cout << setw(5) << " ∞";
+            if(Graph.G[v][w] == INFINITY) cout << setw(5) << " 0";
             else cout << setw(5) << Graph.G[v][w];
         }
         cout << endl;   
@@ -110,14 +111,14 @@ Vertex NextNeighbor(MGraph &Graph, Vertex v, Vertex w) {
 void DFS(MGraph Graph, Vertex v, bool visited[]) {
     Vertex w;
     visited[v] = true;
-    cout << Graph.Data[v];
+    cout << Graph.Data[v] << " ";
     for ( w = FirstNeighbor(Graph, v); w >= 0; w = NextNeighbor(Graph, v, w)) {
         if(!visited[w]) DFS(Graph, w, visited);
     }
     
 }
 
-void DFSTraverse(MGraph Graph) {
+void DFSTraversal(MGraph Graph) {
     bool visited[MaxVertexNum];
     for (Vertex i = 0; i < Graph.nv; i++) {
         visited[i] = false;
@@ -126,6 +127,35 @@ void DFSTraverse(MGraph Graph) {
         if(!visited[i]) DFS(Graph, 0, visited);
     }
 } 
+
+// 广度优先搜索
+void BFS(MGraph &Graph, Vertex v, bool visited[]) {
+    queue<Vertex> que;
+    Vertex w;
+    que.push(v);
+    visited[v] = true;
+    cout << Graph.Data[v] << " ";
+    while(!que.empty()) {
+        v = que.front();que.pop();
+        for ( w = FirstNeighbor(Graph, v); w >= 0; w = NextNeighbor(Graph, v, w)) {
+            if(!visited[w]) {
+                que.push(w);
+                visited[w] = true;
+                cout << Graph.Data[w] << " ";
+            }       
+        }   
+    }
+}
+
+void BFSTraversal(MGraph &Graph) {
+    bool visited[MaxVertexNum];
+    for (Vertex i = 0; i < Graph.nv; i++) {
+        visited[i] = false;
+    }
+    for (Vertex i = 0; i < Graph.nv; i++) {
+        if(!visited[i]) BFS(Graph, 0, visited);
+    }
+}
 
 void DFS_NonRC(MGraph Graph, Vertex v) {
     Vertex w;
@@ -152,7 +182,12 @@ int main() {
     MGraph Graph;
     BuildMGraph(Graph);
     LoadGraph(Graph);
-    DFS_NonRC(Graph, 0);
+    cout << "DFS:";
+    DFSTraversal(Graph);
+    cout << endl;
+    cout << "BFS:";
+    BFSTraversal(Graph);
+    cout << endl;
     return 0;
 }
 

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <queue>
 using namespace std;
 #define MaxVertexNum 100 // 最大顶点数
 #define INFINITY 65535 // ∞设为双字节无符号整数的最大值65535
@@ -47,16 +48,16 @@ void InitALGraph(ALGraph &Graph, int VertexNum) {
 // 插入边
 void InsertEdge(ALGraph &Graph, Edge edge) {
     ArcNode* newNode = new ArcNode();
-    newNode->adjvex = edge.v2;
+    newNode->adjvex = edge.v2 - 1;
     newNode->weight = edge.weight;
-    newNode->next = Graph.G[edge.v1].first;
-    Graph.G[edge.v1].first = newNode;
+    newNode->next = Graph.G[edge.v1 - 1].first;
+    Graph.G[edge.v1 - 1].first = newNode;
     // 若是无向图则插入另一条边
     newNode = new ArcNode();
-    newNode->adjvex = edge.v1;
+    newNode->adjvex = edge.v1 - 1;
     newNode->weight = edge.weight;
-    newNode->next = Graph.G[edge.v2].first;
-    Graph.G[edge.v2].first = newNode;
+    newNode->next = Graph.G[edge.v2 - 1].first;
+    Graph.G[edge.v2 - 1].first = newNode;
 }
 
 // 建图
@@ -100,23 +101,72 @@ void LoadALGraph(ALGraph &Graph) {
     cout << "--------" << endl;
 }
 
-// 获取第一个邻接点
-ArcNode* FirstNeighbor(ALGraph Graph, Vertex v) {
-
+// 深度优先搜索
+void DFS(ALGraph Graph, Vertex v, bool visited[]) {
+    Vertex w;
+    visited[v] = true;
+    cout << Graph.G[v].data << " ";
+    ArcNode* p = Graph.G[v].first;
+    while(p) {
+        w = p->adjvex;
+        if(!visited[w]) DFS(Graph, w, visited);
+        p = p->next;
+    }
 }
 
-// 获取下一个邻接点
-ArcNode* NextNeighbor(ALGraph Graph, Vertex v, ArcNode* w) {
-    
+void DFSTraversal(ALGraph Graph) {
+    bool visited[MaxVertexNum];
+    for (Vertex i = 0; i < Graph.nv; i++) {
+        visited[i] = false;
+    }
+    for (Vertex i = 0; i < Graph.nv; i++) {
+        if(!visited[i]) DFS(Graph, 0, visited);
+    }
+} 
+
+// 广度优先搜索
+void BFS(ALGraph &Graph, Vertex v, bool visited[]) {
+    queue<Vertex> que;
+    Vertex w;
+    que.push(v);
+    visited[v] = true;
+    cout << Graph.G[v].data << " ";
+    while(!que.empty()) {
+        v = que.front();que.pop();
+        ArcNode* p = Graph.G[v].first;
+        while(p) {
+            w = p->adjvex;
+            if(!visited[w]) {
+                que.push(w);
+                visited[w] = true;
+                cout << Graph.G[w].data << " ";
+            }  
+            p = p->next;     
+        }   
+    }
 }
 
-void DFS() {
-
+void BFSTraversal(ALGraph &Graph) {
+    bool visited[MaxVertexNum];
+    for (Vertex i = 0; i < Graph.nv; i++) {
+        visited[i] = false;
+    }
+    for (Vertex i = 0; i < Graph.nv; i++) {
+        if(!visited[i]) BFS(Graph, 0, visited);
+    }
 }
+
+
 
 int main() {
     ALGraph Graph;
     BuildALGraph(Graph);
     LoadALGraph(Graph);
+    cout << "DFS:";
+    DFSTraversal(Graph);
+    cout << endl;
+    cout << "BFS:";
+    BFSTraversal(Graph);
+    cout << endl;
     return 0;
 }

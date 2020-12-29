@@ -6,7 +6,7 @@ using namespace std;
 typedef int ElemType;
 typedef struct QNode *PtrToQNode;
 typedef struct QNode{
-  ElemType data;
+  	ElemType data;
 	PtrToQNode next;
 }QNode;
 typedef struct Queue{

@@ -3,11 +3,15 @@
 
 
 typedef struct PolyNode{
-  int coef;
-  int expon;
-  struct PolyNode* link;
+  int coef; // 系数
+  int expon;  // 指数
+  struct PolyNode* link;  // 下一个多项式结点
 }PolyNode;
 typedef PolyNode* Polynomial;
+
+void AddUI();
+void MultUI();
+void Welcome();
 
 /*在函数内部修改传入指针的指向需要传入指针的指针*/
 void Attach(int c, int e, Polynomial* rear)
@@ -20,25 +24,71 @@ void Attach(int c, int e, Polynomial* rear)
   *rear = P;
 }
 
-Polynomial ReadPoly()
+// 打印多项式 
+void PrintPoly(Polynomial P,const char* name)
 {
-  int c, e, N;
+  printf("%s(x) = ", name);
+  if (P == NULL) {
+    printf("0\n");
+    return;
+  }
+  int flag = 0;
+  while(P) {
+    if(flag) printf(" + ");
+    if(P->coef > 0) {
+      if(P->coef != 1 || (P->coef == 1 && P->expon == 0)) {
+        printf("%d", P->coef);
+      }
+    }else {
+      printf("(%d)", P->coef);
+    }
+    if(P->expon > 1) {
+      printf("x^%d", P->expon);
+    }
+    if(P->expon == 1) {
+      printf("x");
+    }
+    if(P->expon < 0) {
+      printf("x^(%d)", P->expon);
+    }
+    if(!flag) {
+      flag = 1;
+    }
+    P = P->link;
+  }
+  printf("\n");
+}
+
+// 创建链表
+Polynomial ReadPoly(const char* name)
+{
+  printf("请输入多项式%s: (格式：系数 指数；以 0 0 结束！；按照降幂输入！)\n", name);
+  printf("-----------------------------------------------------------\n");
+  int c, e;
   Polynomial P, t, Rear;
-  scanf("%d", &N);
   P = (Polynomial)malloc(sizeof(PolyNode));
   P->link = NULL;
   Rear = P;
-  while(N--) {
+  int flag = 0;
+  while(1) {
+    if(flag == 0) 
+      printf("请输入多项式%s的第一项: ", name);
+    else {
+      printf("请输入多项式%s的下一项: ", name);
+    }
     scanf("%d %d", &c, &e);
+    if(c == 0 && e == 0) break;
     if(abs(c) <= 1000 && abs(e) <= 1000)
       Attach(c, e, &Rear);
-  }
+    if(!flag) flag = 1;
+  };
   t = P;
   P = P->link;
   free(t);
   return P;
 }
 
+// 多项式相乘
 Polynomial PolyMult(Polynomial P1, Polynomial P2)
 {
   Polynomial P,Rear,t1,t2,t;
@@ -75,6 +125,7 @@ Polynomial PolyMult(Polynomial P1, Polynomial P2)
           free(t);
         }
       }else {
+        // 插入结点
         t = (Polynomial)malloc(sizeof(PolyNode));
         t->coef = c;
         t->expon = e;
@@ -90,15 +141,17 @@ Polynomial PolyMult(Polynomial P1, Polynomial P2)
   return P;
 }
 
+// 多项式相加
 Polynomial PolyAdd(Polynomial P1, Polynomial P2)
 {
   Polynomial P,Rear,t;
   int sum;
-  P = (Polynomial)malloc(sizeof(PolyNode));
+  P = (Polynomial)malloc(sizeof(PolyNode)); // 带头结点的新链表
   P->link = NULL;
   Rear = P;
   while(P1 && P2) {
-    if(P1->expon > P2->expon) {
+    // 复制指数较大的结点链接到新链表表尾
+    if(P1->expon > P2->expon) { 
       Attach(P1->coef, P1->expon, &Rear);
       P1 = P1->link;
     }
@@ -106,13 +159,16 @@ Polynomial PolyAdd(Polynomial P1, Polynomial P2)
       Attach(P2->coef, P2->expon, &Rear);
       P2 = P2->link;
     }
+    // 若指数相同
     else {
       sum = P1->coef+P2->coef;
+      // 系数相加不为 0 
       if(sum) Attach(sum, P1->expon, &Rear);
       P1 = P1->link;
       P2 = P2->link;
     }
   }
+  // 剩余长度的结点
   while(P1) {
     Attach(P1->coef, P1->expon, &Rear);
     P1 = P1->link;
@@ -121,6 +177,7 @@ Polynomial PolyAdd(Polynomial P1, Polynomial P2)
     Attach(P2->coef, P2->expon, &Rear);
     P2 = P2->link;
   }
+  // 删除头结点
   Rear->link = NULL;
   t = P;
   P = P->link;
@@ -128,32 +185,91 @@ Polynomial PolyAdd(Polynomial P1, Polynomial P2)
   return P;
 }
 
-void PrintPoly(Polynomial P)
-{
-  int flag = 0;
-  if (P == NULL) {
-    printf("0 0\n");
-    return;
-  }
-  while(P) {
-    if(!flag)
-      flag = 1;
-    else
-      printf(" ");
-    printf("%d %d", P->coef, P->expon);
-    P = P->link;
-  }
+// 相加界面
+void AddUI() {
+  int x;
+  Polynomial P1, P2, PA;
+  const char *f = "f", *g = "g", *F = "F";
+  printf("你选择的操作是多项式相加：\n");
+  P1 = ReadPoly(f);
   printf("\n");
+  PrintPoly(P1, f);
+  printf("\n");
+  P2 = ReadPoly(g);
+  printf("\n");
+  PrintPoly(P2, g);
+  printf("\n");
+  PA = PolyAdd(P1, P2);
+  printf("\n多项式相加的结果为：\n");
+  printf("*****************************\n");
+  PrintPoly(PA, F);
+  printf("*****************************\n");
+  printf("是否继续操作？ 1. 继续；0. 返回   ");
+  scanf("%d", &x);
+  if(x == 1) {
+    AddUI();
+  }else {
+    Welcome();
+  }
+}
+// 相乘界面
+void MultUI() {
+  int x;
+  Polynomial P1, P2, PM;
+  const char *f = "f", *g = "g", *F = "F";
+  printf("你选择的操作是多项式相乘：\n");
+  P1 = ReadPoly(f);
+  printf("\n");
+  PrintPoly(P1, f);
+  printf("\n");
+  P2 = ReadPoly(g);
+  printf("\n");
+  PrintPoly(P2, g);
+  printf("\n");
+  PM = PolyMult(P1, P2);
+  printf("\n多项式相乘的结果为：\n");
+  printf("*****************************\n");
+  PrintPoly(PM, F);
+  printf("*****************************\n");
+  printf("是否继续操作？ 1. 继续；0. 返回   ");
+  scanf("%d", &x);
+  if(x == 1) {
+    MultUI();
+  }else {
+    Welcome();
+  }
+}
+// 开始界面
+void Welcome() {
+  int x;
+  printf("");
+  printf("          任意两个多项式的相加/相乘  \n");
+  printf("        ▇▇▇▇▇▇▇▇▇▇▇▇▇\n");
+  printf("        ★                      ★\n");
+  printf("        ★ 1. 两个多项式相加    ★\n");
+  printf("        ★ 2. 两个多项式相乘    ★ \n");
+  printf("        ★ 0. 退出              ★\n");
+  printf("        ★                      ★ \n");
+  printf("        ▇▇▇▇▇▇▇▇▇▇▇▇▇\n");
+  printf("            你选择的操作是：");
+  scanf("%d", &x);
+  printf("\n\n");
+  if(x == 0) {
+    exit(0);
+  }
+  else if(x == 1) {
+    AddUI();
+  }
+  else if(x == 2) {
+    MultUI();
+  }
+  else {
+    exit(0);
+  }
 }
 
 int main()
 {
-  Polynomial P1, P2, PP, PS;
-  P1 = ReadPoly();
-  P2 = ReadPoly();
-  PP = PolyMult(P1, P2);
-  PrintPoly(PP);
-  PS = PolyAdd(P1, P2);
-  PrintPoly(PS);
+  Welcome();
   return 0;
 }

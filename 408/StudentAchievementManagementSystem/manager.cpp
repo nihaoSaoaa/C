@@ -7,49 +7,50 @@
 #include<string>
 #include<fstream>						//文件的输出输出流操作
 #include<iomanip>						//对齐输出
+#include <conio.h>
 using namespace std;
+#include"Base.h"
+#include"Util.h"
+#include"Lesson.h"
+#include"Student.h"
+#include"Teacher.h"
+#include"Administrator.h"
+#include"ManageSystem.h"
 
-const char* filename_teacher="Teacher.txt";
 const char* filename_student="Student.txt";			//学生信息记录的文件名称
 const char* filename_lesson="Lesson.txt";	//公共课程信息的记录名称
-const int MAX=10;							//最多课程数量
+const char* filename_teacher="Teacher.txt";	//公共课程信息的记录名称
 
-struct Lesson_Node							//课程的结构体设置
-{
-	string L_name;							//课程名称
-	int grade;								//课程成绩
-};
+void Util::inputPassword(string &str, int size) {
+	char c;
+	int count = 0;
+	char *password = new char[size]; // 动态申请空间
+	while ((c = getch()) != '\r') {
 
-class Lesson								//课程设置类
-{
-private:
-	Lesson_Node lesson[MAX];				//课程具体信息，最多10项
-	int n;									//当前的课程数量
-	int Mount_s;							//成绩总和
-	int Average_s;							//平均成绩
-public:
-	Lesson();							//课程初始化，读取文件中公共课程的信息设置,如果没有文件就建立一个文件
-	~Lesson();							//析构
-	Lesson(const Lesson&rhs);				//复制构造函数
-	Lesson& operator=(const Lesson&L);		// 重载赋值函数
-	int ReturnMount_s();						//返回总分
-	int ReturnAverage_s();					//返回平均分
-	void Dislesson(int x=1);					//输出当前的课程的信息
-	void Addlesson(int i=1);					//增加课程 参数1是公共课程的添加 2是私人课程的添加
-	void Dellesson(int i=1);					//删除课程
-	void SetA_M();							//计算平均分和总分
-	/*******************************************     个人选修课程设置     *********************************************/
-	void SetPersonLesson();
-	/*******************************************     公共课程设置部分     **********************************************/
-	void Filein_PublicL();				//向文件中输入公共课程的设置
-	void Fileout_PublicL();				//从文件中读取公共课程设置信息，建立课程
-	void SetPublicLesson();				//设置当前的公共课程的信息
-	/*******************************************      输入输出友元函数     **********************************************/
-	friend istream& operator>>(istream& is,Lesson &rhs);//输入成绩
-	friend ostream& operator<<(ostream& os,Lesson &rhs);//输出成绩
-	friend class student_Node;
-	friend class student_List;
-};
+		if (c == 8) { // 退格
+			if (count == 0) {
+					continue;
+			}
+			putchar('\b'); // 回退一格
+			putchar(' '); // 输出一个空格将原来的*隐藏
+			putchar('\b'); // 再回退一格等待输入
+			count--;
+		}
+		if (count == size - 1) { // 最大长度为size-1
+			continue;
+		}
+		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {  // 密码只可包含数字和字母
+			putchar('*');  // 接收到一个字符后, 打印一个*
+			password[count] = c;
+			count++;
+		}
+	}
+	password[count] = '\0';
+	str = password;
+	delete[] password; // 释放空间
+	cout << endl;
+}
+
 
 Lesson::Lesson()								//课程初始化，读取文件中公共课程的信息设置,如果没有文件就建立一个文件
 {
@@ -64,12 +65,12 @@ Lesson::Lesson()								//课程初始化，读取文件中公共课程的信息
 			lesson[i].grade=0;
 		}
 		SetA_M();
-		Filein_PublicL();				//如果打开失败，就写一个文件
+		Filewrite();				//如果打开失败，就写一个文件
 	}
 	else
 	{
 		ifs.close();
-		Fileout_PublicL();				//读取成功就读取当前文件中的课程设置
+		Fileread();				//读取成功就读取当前文件中的课程设置
 		
 	}
 }
@@ -114,10 +115,10 @@ int Lesson::ReturnAverage_s()						//返回平均分
 	return Average_s;
 }
 
-void Lesson::Dislesson(int x)					//输出当前的课程的信息
+void Lesson::Display(int x)					//输出当前的课程的信息
 {
 	if(x==1)							//由于需要，在没有输入参数的情况下默认是输出文件中的课程信息，在参数x不等于1则输出当前内存中修改后的课程信息
-		Fileout_PublicL();
+		Fileread();
 	int i;
 	for(i=0;i<n;i++)
 	{
@@ -126,7 +127,7 @@ void Lesson::Dislesson(int x)					//输出当前的课程的信息
 	cout<<endl;
 }
 
-void Lesson::Addlesson(int i)					//增加课程 参数1是公共课程的添加 2是私人课程的添加
+void Lesson::Add(int i)					//增加课程 参数1是公共课程的添加 2是私人课程的添加
 {
 	
 	char t='1';
@@ -155,10 +156,10 @@ void Lesson::Addlesson(int i)					//增加课程 参数1是公共课程的添加
 		cin>>t;
 	}
 	if(i==1)
-	Filein_PublicL();//将修改后的课程信息写入文件
+	Filewrite();//将修改后的课程信息写入文件
 }	
 
-void Lesson::Dellesson(int i)					//删除课程
+void Lesson::Dell(int i)					//删除课程
 {
 	int x;string tmp;char t='1';
 	while(t=='1')
@@ -174,7 +175,7 @@ void Lesson::Dellesson(int i)					//删除课程
 			}
 			n--;
 			if(i==1)
-			Dislesson(0);				//显示当前内存中的课程信息，避免一直循环删除要一直读取写入文件，所以一次性将修改好的课程写入文件
+			Display(0);				//显示当前内存中的课程信息，避免一直循环删除要一直读取写入文件，所以一次性将修改好的课程写入文件
 		}
 		else
 		{
@@ -184,7 +185,7 @@ void Lesson::Dellesson(int i)					//删除课程
 		cin>>t;
 	}
 	if(i==1)
-	Filein_PublicL();					//写入文件
+	Filewrite();					//写入文件
 }
 
 void Lesson::SetA_M()							//计算平均分和总分
@@ -203,13 +204,13 @@ void Lesson::SetPersonLesson()
 	string tmp;
 	char x='0';
 	int i;
-	Dislesson(2);  cout<<endl;                             //输出当前学生信息中的课程信息
+	Display(2);  cout<<endl;                             //输出当前学生信息中的课程信息
 	cout<<"a.增加课程 b.删除课程";
 	cin>>x;
 	switch (x)
 	{
-	case 'a':Addlesson(2);break;							//增加单人课程
-	case 'b':Dellesson(2);break;							//删除单人课程
+	case 'a':Add(2);break;							//增加单人课程
+	case 'b':Dell(2);break;							//删除单人课程
 	default:
 		i=x-'0';
 		if(i>0&&i<=n)
@@ -224,7 +225,7 @@ void Lesson::SetPersonLesson()
 }
 /*******************************************     公共课程设置部分     **********************************************/
 
-void Lesson::Filein_PublicL()				//向文件中输入公共课程的设置
+void Lesson::Filewrite()				//向文件中输入公共课程的设置
 {
 	ofstream ofs(filename_lesson);
 	if(!ofs)
@@ -241,7 +242,7 @@ void Lesson::Filein_PublicL()				//向文件中输入公共课程的设置
 
 }
 
-void Lesson::Fileout_PublicL()				//从文件中读取公共课程设置信息，建立课程
+void Lesson::Fileread()				//从文件中读取公共课程设置信息，建立课程
 {
 	int i=0;
 	ifstream ifs(filename_lesson);
@@ -262,17 +263,17 @@ void Lesson::Fileout_PublicL()				//从文件中读取公共课程设置信息�
 void Lesson::SetPublicLesson()				//设置当前的公共课程的信息
 {
 	cout<<"当前公共课程信息："<<endl;//显示当前的课程信息便于用来添加或删除
-	Dislesson();
+	Display();
 	cout<<"1.添加课程  2.删除课程  0.返回 ";
 	string tmp;char t;
 	cin>>t;
 	switch(t)
 	{
 	case '1':
-		Addlesson();
+		Add();
 		break;
 	case '2':
-		Dellesson();
+		Dell();
 		break;
 	case '0':break;
 	}
@@ -301,46 +302,19 @@ ostream& operator<<(ostream& os,Lesson &L)//输出成绩
 }
 
 /*****************************************************************************************************************************/
-Lesson L;//***********************************************************************************公共课程变量
-
-class student_Node		//学生的信息类，存储学生的信息，并修改信息
-{
-private:
-	string Name;		//姓名
-	long Number;		//学号
-	string Sex;			//性别
-	string Academy;		//学院
-	string Class;		//班级
-	Lesson Less;        //课程
-	student_Node *next;	// 指向下一个学生结点
-public:
-	student_Node(string na="空",long num=0,string sex="男",string aca="空",string cla="空");		//对成绩和姓名所以成员都进行初始化??需要优化?
-	student_Node(student_Node &s); // 复制构造函数
-	~student_Node();					//析构
-	student_Node& operator=(const student_Node&s);	// 赋值重载
-	void SetName(string name);		//设置名字
-	void SetNumber(long num );		//设置学号
-	void SetSex(string sex);			//设置性别
-	void SetAcademy(string acad);	//设置学院
-	void SetClass(string cla );		//设置班级
-	void SetLesson();				//单人课程设置
-	friend istream& operator>>(istream&is,student_Node &S);//输入数据
-	friend ostream& operator<<(ostream&os,student_Node &S);//输出数据
-	friend class  student_List;		//友元类设置
-};
-
-student_Node::student_Node(string na,long num,string sex,string aca,string cla)		//对成绩和姓名所以成员都进行初始化??需要优化?
-:Less(L)
+Student::Student(string na,long num,string sex,string aca,string cla)		//对成绩和姓名所以成员都进行初始化??需要优化?
 {
 	SetName(na);
 	SetNumber(num);
 	SetSex(sex);
 	SetAcademy(aca);
 	SetClass(cla);
+	Lesson L;
+	Less = L;
 	next=NULL;
 }
 
-student_Node::student_Node(student_Node &s) // 复制构造函数
+Student::Student(Student &s) // 复制构造函数
 {
 	Name = s.Name;
 	Number = s.Number;
@@ -350,7 +324,7 @@ student_Node::student_Node(student_Node &s) // 复制构造函数
 	Less=s.Less; 
 }
 
-student_Node::~student_Node()					//析构
+Student::~Student()					//析构
 {
 	Name="";
 	Number=0;
@@ -360,7 +334,7 @@ student_Node::~student_Node()					//析构
 	next=NULL;
 }
 
-student_Node& student_Node::operator =(const student_Node&s)
+Student& Student::operator=(const Student&s)
 {
 	Name=s.Name;
 	Number=s.Number;
@@ -371,37 +345,37 @@ student_Node& student_Node::operator =(const student_Node&s)
 	return *this;
 }
 
-void student_Node::SetName(string name)		//设置名字
+void Student::SetName(string name)		//设置名字
 {
 	Name=name;
 }
 
-void student_Node::SetNumber(long num )		//设置学号
+void Student::SetNumber(long num)		//设置学号
 {
 	Number=num;
 }
 
-void student_Node::SetSex(string sex)			//设置性别
+void Student::SetSex(string sex)			//设置性别
 {
 	Sex=sex;
 }
 
-void student_Node::SetAcademy(string acad)	//设置学院
+void Student::SetAcademy(string acad)	//设置学院
 {
 	Academy=acad;
 }
 
-void student_Node::SetClass(string cla )		//设置班级
+void Student::SetClass(string cla)		//设置班级
 {
 	Class=cla;
 }
 
-void student_Node::SetLesson()				//单人课程设置
+void Student::SetLesson()				//单人课程设置
 {
 	Less.SetPersonLesson();
 }
 
-istream& operator>>(istream&is,student_Node &S)//输入数据
+istream& operator>>(istream&is,Student &S)//输入数据
 {
 	string tmp;
 	long num;
@@ -425,47 +399,23 @@ istream& operator>>(istream&is,student_Node &S)//输入数据
 	return is;
 }
 
-ostream& operator<<(ostream&os,student_Node &S)//输出数据
+ostream& operator<<(ostream&os,Student &S)//输出数据
 {
 	cout<<left<<setw(8)<<S.Name<<left<<setw(16)<<S.Number<<left<<setw(8)<<S.Sex<<left<<setw(10)<<S.Academy<<left<<setw(8)<<S.Class<<left<<setw(8)<<S.Less.ReturnMount_s()<<left<<setw(8)<<S.Less.ReturnAverage_s()<<endl;
-	
+	cout << endl;
 	cout<<S.Less<<endl;		//输出课程
 	cout<<"-------------------------------------"<<endl;
 	return os;
 }
 /*******************************************************************************************************************/
 
-class student_List					//学生的信息链表类，主要进行链表的操作，查找输出
+Teacher::Teacher(string t_number, string t_name, string password)					//学生链表的初始化，建立头结点,并从文件中读取信息建立链表
 {
-private:
-	student_Node *head;
-public:
-	student_List();					//学生链表的初始化，建立头结点,并从文件中读取信息建立链表
-	~student_List();
-	void Fileread();					//读取文件中的信息建立链表
-	void Filewrite();				//通过文件的读写将链表中的内容写到文件中
-	/**********************************     操作部分    ***********************************/
-	void Putin(int n=1);			//输入,参数的含义是区别与是操作1的输入还是插入函数（默认是输入函数）
-	void Display(int x=1);				//显示输出cout<<left<<setw(40)<<"靠左输出"<<left<<setw(35)<<"靠左输出"<<endl;
-	void Insert();				//插入(添加)
-	void Delete();				//删除
-	void Find(int i=1);			//查找
-	void Find_01name(int x=1);	//查找名字 参数 1.查找 2.删除 3.修改
-	void Find_02number(int x=1);//学号查找
-	void Find_03academy(int x=1);//学院查找
-	void Modify();		//修改             界面里加上一些划线增加美观度
-	void Modify_small(student_Node *p);
-	void Sort();			//排序
-	void Sort_small(int i=1);//排序函数分支，根据参数的不同进行不同选项的排序1.默认学号 2.单科成绩 3.总成绩  
-	void Cal();			//计算各个学科总成绩和平均成绩   需要强大其功能
-	void Cal_small(string na);
-	float Grade_fail(string name ,int grade);		//计算成绩打败全校的百分比
-	void student_pass(string na ,string num );		//学生登陆情况
-};
-
-student_List::student_List()					//学生链表的初始化，建立头结点,并从文件中读取信息建立链表
-{
-	head=new student_Node;
+	this->t_name = t_name;
+	this->t_number = t_number;
+	this->password = password;
+	this->link=NULL;
+	head=new Student;
 	head->next=NULL;
 	ifstream ifs(filename_student);
 	if(!ifs)					//如果文件不存在
@@ -474,9 +424,9 @@ student_List::student_List()					//学生链表的初始化，建立头结点,�
 	}
 }
 
-student_List::~student_List()
+Teacher::~Teacher()
 {
-	student_Node *p=head->next,*q;
+	Student *p=head->next,*q;
 	while(p!=NULL)
 	{
 		q=p;
@@ -486,7 +436,7 @@ student_List::~student_List()
 	delete head;
 }
 
-void student_List::Fileread()					//读取文件中的信息建立链表
+void Teacher::Fileread()					//读取文件中的信息建立链表
 {
 	ifstream ifs(filename_student);
 	if(!ifs)
@@ -494,10 +444,10 @@ void student_List::Fileread()					//读取文件中的信息建立链表
 		cout<<"文件打开失败"<<endl;
 		exit(0);
 	}
-	student_Node *q=head;
+	Student *q=head;
 	while(ifs.peek()!=EOF)		//判断是否读取到文件末尾了 采用这个peek函数而不采用ifs.eof()是防止文件为空时还进入循环
 	{
-		student_Node *p=new student_Node;
+		Student *p=new Student;
 		ifs>>p->Name
 			>>ws
 			>>p->Number
@@ -518,9 +468,9 @@ void student_List::Fileread()					//读取文件中的信息建立链表
 	}
 }
 
-void student_List::Filewrite()				//通过文件的读写将链表中的内容写到文件中
+void Teacher::Filewrite()				//通过文件的读写将链表中的内容写到文件中
 {
-	student_Node *p=head->next;
+	Student *p=head->next;
 	ofstream ofs(filename_student);
 	if(!ofs)
 	{
@@ -541,12 +491,12 @@ void student_List::Filewrite()				//通过文件的读写将链表中的内容�
 	ofs.close();
 }
 
-void student_List::Putin(int n=1)			//输入,参数的含义是区别与是操作1的输入还是插入函数（默认是输入函数）
+void Teacher::Putin(int n)			//输入,参数的含义是区别与是操作1的输入还是插入函数（默认是输入函数）
 {
 	char x='0';
 	int i=1;				//计数
 	int num_0,num_1;//插入位置
-	student_Node *q;
+	Student *q;
 	if(n==1)				//这是操作输入数据是需要的，如果插入数据则不需要
 	{
 		cout<<"是否清空原来数据 0.是的 1.不，添加进去 3.返回 ";
@@ -563,7 +513,7 @@ void student_List::Putin(int n=1)			//输入,参数的含义是区别与是操�
 		while(x=='0')
 		{
 			cout<<"第"<<i++<<"个输入："<<endl;
-			student_Node *p=new student_Node;
+			Student *p=new Student;
 			cin>>*p;
 			if(n!=3)//节点的插法
 			{
@@ -598,35 +548,35 @@ void student_List::Putin(int n=1)			//输入,参数的含义是区别与是操�
 	}
 }
 
-void student_List::Display(int x=1)				//显示输出cout<<left<<setw(40)<<"靠左输出"<<left<<setw(35)<<"靠左输出"<<endl;
+void Teacher::Display(int x)				//显示输出cout<<left<<setw(40)<<"靠左输出"<<left<<setw(35)<<"靠左输出"<<endl;
 {
 	if(x==1)
 		Fileread();
 	cout<<left<<setw(10)<<"·序号·"<<left<<setw(13)<<" ·姓名·"<<left<<setw(15)<<" ·学号·"<<left<<setw(12)<<"·性别·"<<left<<setw(10)<<"·学院·"<<left<<setw(10)<<"·班级·"<<left<<setw(8)<<"|总分|"<<left<<setw(8)<<"|平均分|"<<endl<<endl;
-	student_Node *p=head->next;
+	Student *s=head->next;
 	int i=1;
-	while(p!=NULL)
+	while(s!=NULL)
 	{
-		cout<<left<<setw(3)<<" "<<left<<setw(3)<<i++<<"    "<<*p;
-		p=p->next;
+		cout<<left<<setw(3)<<" "<<left<<setw(3)<<i++<<"    "<<*s;
+		s=s->next;
 	}
-	cin.get();
+	cin.get();cin.get();
 }
 
-void student_List::Insert()				//插入(添加)
+void Teacher::Insert()				//插入(添加)
 {
 	Fileread();				//读取文件形成链表
 	Putin(3);				//参数的改变,就是插入函数的调用
 
 }
 
-void student_List::Delete()				//删除
+void Teacher::Delete()				//删除
 {
 	Find(2);
 	Filewrite();		//写入文件
 }
 
-void student_List::Find(int i=1)			//查找
+void Teacher::Find(int i)			//查找
 {
 	Fileread();//读取文件形成链表
 	char x='0';
@@ -654,12 +604,12 @@ void student_List::Find(int i=1)			//查找
 	}
 }
 
-void student_List::Find_01name(int x=1)	//查找名字 参数 1.查找 2.删除 3.修改
+void Teacher::Find_01name(int x)	//查找名字 参数 1.查找 2.删除 3.修改
 {
 	int i=0;
 	string na;
 	char x_0='1';
-	student_Node *p=head->next,*q=head;
+	Student *p=head->next,*q=head;
 	cout<<"请输入要查找的姓名：";
 	cin>>na;
 	cout<<left<<setw(5)<<"·序号·"<<left<<setw(8)<<" ·姓名·"<<left<<setw(15)<<" ·学号·"<<left<<setw(8)<<"·性别·"<<left<<setw(10)<<"·学院·"<<left<<setw(10)<<"·班级·"<<left<<setw(8)<<"|总分|"<<left<<setw(8)<<"|平均分|"<<endl<<endl;
@@ -697,13 +647,13 @@ void student_List::Find_01name(int x=1)	//查找名字 参数 1.查找 2.删除 
 		cout<<"你能认真点么，没有需要的数据"<<endl;
 }
 
-void student_List::Find_02number(int x=1)//学号查找
+void Teacher::Find_02number(int x)//学号查找
 {
 	int i=0;
 	long num;
 	string tmp;
 	char x_0='1';
-	student_Node *p=head->next,*q=head;
+	Student *p=head->next,*q=head;
 	cout<<"请输入要查找的学号：";
 	cin>>tmp;
 	num=atol(tmp.c_str());
@@ -742,12 +692,12 @@ void student_List::Find_02number(int x=1)//学号查找
 		cout<<"你能认真点么，没有需要的数据"<<endl;
 }
 
-void student_List::Find_03academy(int x=1)//学院查找
+void Teacher::Find_03academy(int x)//学院查找
 {
 	int i=0;
 	string tmp;
 	char x_0='1';
-	student_Node *p=head->next,*q=head;
+	Student *p=head->next,*q=head;
 	cout<<"请输入要查找的学院：";
 	cin>>tmp;
 	cout<<left<<setw(5)<<"·序号·"<<left<<setw(8)<<" ·姓名·"<<left<<setw(15)<<" ·学号·"<<left<<setw(8)<<"·性别·"<<left<<setw(10)<<"·学院·"<<left<<setw(10)<<"·班级·"<<left<<setw(8)<<"|总分|"<<left<<setw(8)<<"|平均分|"<<endl<<endl;
@@ -785,13 +735,13 @@ void student_List::Find_03academy(int x=1)//学院查找
 		cout<<"你能认真点么，没有需要的数据"<<endl;
 }
 
-void student_List::Modify()		//修改             界面里加上一些划线增加美观度
+void Teacher::Modify()		//修改             界面里加上一些划线增加美观度
 {
 	Find(3);
 	Filewrite();		//写入文件
 }
 
-void student_List::Modify_small(student_Node *p)
+void Teacher::Modify_small(Student *p)
 {
 	char a='0';
 	string tmp;
@@ -843,7 +793,7 @@ void student_List::Modify_small(student_Node *p)
 	}
 }
 
-void student_List::Sort()			//排序
+void Teacher::Sort()			//排序
 {
 	Fileread();	
 	char t='0';
@@ -871,12 +821,13 @@ void student_List::Sort()			//排序
 	Filewrite();		//写入文件
 }
 
-void student_List::Sort_small(int i=1)//排序函数分支，根据参数的不同进行不同选项的排序1.默认学号 2.单科成绩 3.总成绩  
+void Teacher::Sort_small(int i)//排序函数分支，根据参数的不同进行不同选项的排序1.默认学号 2.单科成绩 3.总成绩  
 {
 	char t;int x;
+	Lesson L;
 	if(i==2)//单科成绩排序时输出
 	{
-		L.Dislesson();//显示公共课程
+		L.Display();//显示公共课程
 		cin>>t;
 		x=t-'0';//课程的下标
 		if(x>L.n||x<0)
@@ -886,8 +837,8 @@ void student_List::Sort_small(int i=1)//排序函数分支，根据参数的不�
 		}
 	}
 	cout<<"1.递增 2.递减";
-	student_Node *p1,*p2;
-	student_Node tmp;
+	Student *p1,*p2;
+	Student tmp;
 	int flag=1;
 	cin>>t;
 		while(1)//冒泡排序
@@ -960,8 +911,9 @@ void student_List::Sort_small(int i=1)//排序函数分支，根据参数的不�
 		}
 }
 
-void student_List::Cal()			//计算各个学科总成绩和平均成绩   需要强大其功能
+void Teacher::Cal()			//计算各个学科总成绩和平均成绩   需要强大其功能
 {
+	Lesson L;
 	Fileread();	
 	cout<<"-------------------------------------------------------------------"<<endl;
 	cout<<left<<setw(10)<<"科目"<<left<<setw(10)<<"总分"<<left<<setw(10)<<"平均分"<<left<<setw(10)<<"通过率"<<endl;//三个空格
@@ -970,9 +922,9 @@ void student_List::Cal()			//计算各个学科总成绩和平均成绩   需要
 	cin.get();cin.get();
 }
 
-void student_List::Cal_small(string na)
+void Teacher::Cal_small(string na)
 {
-	student_Node *p=head->next;
+	Student *p=head->next;
 	int num_1=0,num_n=0,num_p=0;
 	while(p!=NULL)
 	{
@@ -992,11 +944,11 @@ void student_List::Cal_small(string na)
 	cout<<left<<setw(10)<<na<<left<<setw(10)<<num_1<<left<<setw(10)<<num_1/num_n<<left<<setw(3)<<(float)num_p/(float)num_n*100<<"%"<<endl;
 }
 
-float student_List::Grade_fail(string name ,int grade)		//计算成绩打败全校的百分比
+float Teacher::Grade_fail(string name ,int grade)		//计算成绩打败全校的百分比
 {
 	int num_1=0,num_2=0;
 	float num;
-	student_Node *p=head->next;
+	Student *p=head->next;
 	while (p!=NULL)
 	{
 		for(int i=0;i<p->Less.n;i++)
@@ -1015,39 +967,219 @@ float student_List::Grade_fail(string name ,int grade)		//计算成绩打败全�
 	return num;
 }
 
-void student_List::student_pass(string na ,string num )	//学生登陆情况
+void Teacher::student_pass(string na,string num)	//学生登陆情况
 {
-		Fileread();
-		student_Node *p=head->next;
-		while(p!=NULL)
-		{
-			if(p->Name==na&&p->Number==atol(num.c_str()))
-				break;
-			p=p->next;
-		}
-		if(p==NULL)
-		{
-			cout<<"没有这个学生啊！！！！";
-			cin.get();cin.get();
-			return ;
-		}
-		int i=0;
-		system("cls");
-		cout<<endl<<endl<<"我是"<<p->Name<<",我的编号是"<<p->Number<<",性别"<<p->Sex<<",现在在"<<p->Academy<<p->Class<<"班,深藏功与名~"<<endl<<endl;
-		cout<<left<<setw(15)<<"学科"<<" 成绩"<<endl;
+	Fileread();
+	Student *p=head->next;
+	while(p!=NULL)
+	{
+		if(p->Name==na&&p->Number==atol(num.c_str()))
+			break;
+		p=p->next;
+	}
+	if(p==NULL)
+	{
+		cout<<"没有这个学生啊！！！！";
+		cin.get();cin.get();
+		return ;
+	}
+	int i=0;
+	system("cls");
+	cout<<endl<<endl<<"我是"<<p->Name<<",我的编号是"<<p->Number<<",性别"<<p->Sex<<",现在在"<<p->Academy<<p->Class<<"班,深藏功与名~"<<endl<<endl;
+	cout<<left<<setw(15)<<"学科"<<" 成绩"<<endl;
+	cout<<"-------------------------------------------------------------------------"<<endl;
+	for(i=0;i<p->Less.n;i++)
+	{
+		cout<<left<<setw(15)<<p->Less.lesson[i].L_name<<" "<<p->Less.lesson[i].grade<<"          我打败了全校"<<Grade_fail(p->Less.lesson[i].L_name,p->Less.lesson[i].grade)<<"%的人"<<endl;
 		cout<<"-------------------------------------------------------------------------"<<endl;
-		for(i=0;i<p->Less.n;i++)
-		{
-			cout<<left<<setw(15)<<p->Less.lesson[i].L_name<<" "<<p->Less.lesson[i].grade<<"          我打败了全校"<<Grade_fail(p->Less.lesson[i].L_name,p->Less.lesson[i].grade)<<"%的人"<<endl;
-			cout<<"-------------------------------------------------------------------------"<<endl;
+	}
+	cin.get();cin.get();
+}
+
+
+Teacher* Administrator::teacher_pass(string number, string password)
+{
+	Teacher *p=head->link;
+	while(p && p->t_number != number) {p=p->link;}
+	if(!p) {cout<<"不存在工号"<<number<<"!"<<endl;}
+	else {
+		if(p->password == password) {
+			cout << "登录成功！"<< endl;
+		}else {
+			cout << "密码错误！"<< endl;
 		}
+	}
+	cin.get();cin.get();
+	return p;
+}
+
+Administrator::Administrator() {
+	head=new Teacher;
+	Fileread();
+}
+
+void Administrator::Fileread() {
+	ifstream ifs(filename_teacher);
+	Teacher* t = head;
+	while(ifs.peek()!=EOF)
+	{
+		Teacher *p = new Teacher();
+		ifs>>p->t_number>>ws>>p->t_name>>ws>>p->password>>ws;
+		t->link = p;
+		p->link = NULL;
+		t = p;
+	}
+}
+
+void Administrator::Filewrite() {
+	Teacher *p=head->link;
+	ofstream ofs(filename_teacher);
+	if(!ofs)
+	{
+		cout<<"文件打开失败"<<endl;
+		exit(0);
+	}
+	while(p!=NULL) {
+		ofs<<p->t_number<<'\t'<<p->t_name<<'\t'<<p->password<<'\t'<<endl;
+		p=p->link;
+	}
+	ofs.close();
+}
+
+void Administrator::Display(int x) {
+	cout << left << setw(12) << "·工号·"<< left << setw(12) << "·姓名·" << left << setw(15) << "·密码·" << endl;
+	Teacher* p = head->link;
+	while (p)
+	{
+		cout << left << setw(10) << p->t_number << left << setw(10) << p->t_name << left << setw(10) << p->password << endl;
+		p=p->link;
+	}
+	cin.get();cin.get();
+}
+
+void Administrator::Insert() {
+	int x = 1;
+	string pass_0,pass_1;
+	while(x) {
+		cout << "你选择的是插入操作："<<endl;
+		Teacher *t = new Teacher;
+		cout << "请输入工号:	";
+		cin >> t->t_number;
+		cout << "请输入姓名:	";
+		cin >> t->t_name;
+		while(1) {
+			cout << "请输入密码:	";
+			Util::inputPassword(pass_0, 7);
+			cout << "请再次输入密码:	";
+			Util::inputPassword(pass_1, 7);
+			if(pass_1 == pass_1) {
+				t->password = pass_0;
+				break;
+			}else {
+				cout << "两次密码不一致，请再次输入";
+			}
+		}
+		t->link=head->link;
+		head->link=t;
+		Filewrite();
+		cout<<"插入成功！请继续选择：1. 继续；0. 返回   ";
+		cin >> x;
+	}
+	
+}
+
+void Administrator::Delete() {
+	Teacher* t = Find();
+	int x;
+	if(t) {
+		cout<<"确定要删除该项内容吗？1. 确定，我要删除；0. 等等，我不删除		";
+		cin>>x;
+		if(x==1) {
+			Teacher* p=head;
+			while(p->link!=t) {
+				p=p->link;
+			}
+			p->link=t->link;
+			free(t);
+			cout<<"删除成功！";
+			Filewrite();
+			cin.get();cin.get();
+		}
+	}
+}
+
+void Administrator::Put() {
+	Teacher* t = Find();
+	int x;
+	if(t) {
+		cout << "请选择要修改的内容：1. 工号； 2. 姓名；3. 密码		";
+		cin >> x;
+		if(x == 1) {
+			cout<< "请重新输入工号：";
+			cin>>t->t_number;
+		}
+		if(x == 2) {
+			cout<< "请重新输入姓名：";
+			cin>>t->t_name;
+		}
+		if(x == 3) {
+			cout<< "请重新输入密码：";
+			Util::inputPassword(t->password, 7);
+		}
+		cout << "修改成功！"<<endl;
+		cout << left << setw(10) << t->t_number << left << setw(10) << t->t_name << left << setw(10) << t->password << endl;
+		Filewrite();
 		cin.get();cin.get();
 	}
+}
 
-const string Pass_word="123456";//教师登陆密码
-void Menu_studentpass()//学生登陆
+Teacher* Administrator::Find() {
+	int x;
+	string number;
+	string name;
+	Teacher* t = NULL;
+	Teacher* p =head->link;
+	cout << "请选择查找的方式：1. 工号；2. 姓名;0. 返回"<< endl;
+	cin >> x;
+	if(x == 0) {
+		return t;
+	}
+	if(x == 1) {
+		cout<<"请输入工号：";
+		cin >> number;
+		while(p) {
+			if(p->t_number == number) {
+				t = p;
+				break;
+			}
+			p=p->link;
+		}
+	}
+	else if(x == 2) {
+		cout<<"请输入姓名：";
+		cin >> name;
+		while(p) {
+			if(p->t_name == name) {
+				t = p;
+				break;
+			}
+			p=p->link;
+		}
+	}
+	if(t) {
+		cout <<"需要的信息： "<< t->t_name <<"    "<<t->t_number <<"    "<< t->password << endl;
+	}else {
+		cout << "对不起，你需要的信息未找到！" << endl;
+	}
+	cin.get();cin.get();
+	return t;
+}
+
+/****************************************************/
+const string ManageSystem::Pass_word="123456";//登陆密码
+void ManageSystem::Menu_studentpass()//学生登录
 {
-	student_List B;
+	Teacher B;
 	string na ,num;
 	cout<<"\n\n                           请输入学号：";
 	cin>>num;
@@ -1055,18 +1187,31 @@ void Menu_studentpass()//学生登陆
 	cin>>na;
 	B.student_pass(na,num);
 }
-void Menu()				//主菜单界面
+Teacher* ManageSystem::Menu_teacherpass()//教师登录
+{
+	Administrator admin;
+	string number, password;
+	cout<<"\n\n                           请输入工号：";
+	cin>>number;
+	cout<<"                           请输入密码：";
+	Util::inputPassword(password, 7);
+	Teacher* p = admin.teacher_pass(number,password);
+	return p;
+}
+void ManageSystem::Menu_teacher(Teacher* p)				//主菜单界面
 {
 	while(1)
 	{
 	system("cls");
-	cout<<"\n\n\n\n\n";
-	cout<<"             			输入相应数字键以开始操作    "<<endl;
-	cout<<"                    ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"  <<endl;
+	cout<<"\n\n";
+	cout<<"		工号"<< p->t_number <<"          欢迎登录学生管理系统！"<<p->t_name<<"老师" <<endl;
+	cout<<"\n\n";
+	cout<<"             		输入相应数字键以开始操作    "<<endl;
+	cout<<"                    ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"  <<endl;
 	cout<<"                    ▏                            ▕"<<endl;
 	cout<<"                    ▏        1.输入              ▕"<<endl;
 	cout<<"                    ▏        2.输出              ▕"<<endl;
-	cout<<"                    ▏        3.公共课程设置       ▕  "<<endl;
+	cout<<"                    ▏        3.公共课程设置      ▕"<<endl;
 	cout<<"                    ▏        4.添加              ▕"<<endl;//变成课任意插入位置的
 	cout<<"                    ▏        5.查找              ▕"<<endl;
 	cout<<"                    ▏        6.删除              ▕"<<endl;
@@ -1075,9 +1220,10 @@ void Menu()				//主菜单界面
 	cout<<"                    ▏        9.计算              ▕"<<endl;
 	cout<<"                    ▏        0.退出登陆          ▕"<<endl;
 	cout<<"                    ▏                            ▕"<<endl;
-	cout<<"                    ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"<<endl;
-	cout<<"\n\n                          	请输入操作：";
-	student_List A;//建立链表,初始化
+	cout<<"                    ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"<<endl;
+	cout<<"\n\n                请输入操作：";
+	Teacher A;
+	Lesson L;
 	char t;
 	cin>>t;
 	system("cls");
@@ -1108,49 +1254,107 @@ void Menu()				//主菜单界面
 		A.Sort();
 		break;
 	case '9':
-		A.Cal();break;
-	case '0':return ;
+		A.Cal();
+		break;
+	case '0':
+		return;
 	default:
 		break;
 	}
 	}
 }
-void Welcome()			//开始的登陆界面
+void ManageSystem::Menu_admin() 		//管理界面
+{
+	while(1)
+	{
+	system("cls");
+	cout<<"\n\n\n\n\n";
+	cout<<"          		输入相应数字键以开始操作"<<endl;
+	cout<<"                    ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"  <<endl;
+	cout<<"                    ▏                            ▕"<<endl;
+	cout<<"                    ▏        1.输出              ▕"<<endl;
+	cout<<"                    ▏        2.查找              ▕"<<endl;
+	cout<<"                    ▏        3.添加              ▕"<<endl;
+	cout<<"                    ▏        4.修改              ▕"<<endl;
+	cout<<"                    ▏        5.删除              ▕"<<endl;
+	cout<<"                    ▏        0.退出登陆          ▕"<<endl;
+	cout<<"                    ▏                            ▕"<<endl;
+	cout<<"                    ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"<<endl;
+	cout<<"\n                		请输入操作：";
+	Administrator admin;
+	char t;
+	cin>>t;
+	system("cls");
+	switch (t)
+	{
+	case '1':
+		admin.Display();
+		break;
+	case '2':
+		admin.Find();
+		break;
+	case '3':
+		admin.Insert();
+		break;
+	case '4':
+		admin.Put();
+		break;
+	case '5':
+		admin.Delete();
+		break;
+	case '0':
+		return;
+	default:
+		break;
+	}
+	}
+}
+void ManageSystem::Welcome()			//开始的登陆界面
 {
 	system("cls");
-
+	system("color 0B");
 	cout<<"\n\n\n\n\n\n";
 	cout<<"                            ☆学生成绩管理系统☆"<<endl;
 	cout<<"                                              designed by 408"<<endl;
-	cout<<"                           ▇▇▇▇▇▇▇▇▇▇▇"<<endl;
+	cout<<"                           ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇"<<endl;
 	cout<<"                           ★                  ★"<<endl;
-	cout<<"                           ★    1.教师登录     ★"<<endl;
-	cout<<"                           ★    2.学生登录     ★"<<endl;
-	cout<<"                           ★    0.退   出      ★"<<endl;
+	cout<<"                           ★    1.教师登录    ★"<<endl;
+	cout<<"                           ★    2.学生登录    ★"<<endl;
+	cout<<"                           ★    3.管理员登录  ★"<<endl;
+	cout<<"                           ★    0.退   出     ★"<<endl;
 	cout<<"                           ★                  ★"<<endl;
-	cout<<"                           ▇▇▇▇▇▇▇▇▇▇▇"<<endl;
+	cout<<"                           ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇"<<endl;
 	cout<<"\n\n                          	请输入操作：";
 	char x;
+	Teacher* p;
 	string tmp;
 	cin>>x;
 	switch(x)
 	{
 	case '0':exit(0);
 	case '1':
-		cout<<"\n\n                           请输入密码：";
-		cin>>tmp;
-		if(tmp==Pass_word)					//判断是否通过密码
-			Menu();
+		p = Menu_teacherpass();
+		if(p != NULL) {
+			Menu_teacher(p);
+		}
 		break;
 	case '2':
 		Menu_studentpass();
 		break;
+	case '3':
+		cout<<"\n\n                           请输入密码：";
+		Util::inputPassword(tmp, 7);
+		if(tmp==Pass_word)					//判断是否通过密码
+			Menu_admin();
+		break;
 	}
-	//_sleep(2*1000);//延时命令
 }
+
 int main()
 {
-	while(1)
-	Welcome();
+	while(1) {
+		ManageSystem manageSystem;
+		manageSystem.Welcome();
+	}
 	return 0;
 }
